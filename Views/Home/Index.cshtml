@@ -1,0 +1,401 @@
+﻿@model GestorDeGastos.ViewModels.DashboardViewModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4">Gastos del Mes</h2>
+
+    <!-- Totales del mes actual -->
+    <div class="row my-4">
+        <div class="col-md-6 mb-3">
+            <div class="card text-white bg-success h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Total del mes en AR$</h5>
+                    <p class="h4">@Model.TotalMesPesos.ToString("C", CultureInfo.CreateSpecificCulture("es-AR"))</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card text-white bg-info h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Total del mes en USD</h5>
+                    <p class="h4">US$ @Model.TotalMesDolares.ToString("N2")</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección de Gráficos de Rubros -->
+    <div class="row mb-4">
+        <!-- Gráfico de rubros pesos -->
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Distribución por Rubros (Pesos)</h5>
+                    @if (Model.CategoriasDelMes.Any(c => c.TotalPesos != 0))
+                    {
+                        <div style="height: 300px;">
+                            <canvas id="graficoRubrosPesos"></canvas>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info text-center mt-3">
+                            No hay gastos en pesos registrados en este mes.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico de rubros USD -->
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Distribución por Rubros (Dólares)</h5>
+                    @if (Model.CategoriasDelMes.Any(c => c.TotalDolares != 0))
+                    {
+                        <div style="height: 300px;">
+                            <canvas id="graficoRubrosDolares"></canvas>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info text-center mt-3">
+                            No hay gastos en dólares registrados este mes.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de gastos en pesos -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Gastos en Pesos (Mes Actual)</h5>
+                    @if (Model.GastosPesos.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Usuario</th>
+                                        <th>Rubro</th>
+                                        <th>Detalle</th>
+                                        <th>Monto</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var g in Model.GastosPesos)
+                                    {
+                                        <tr>
+                                            <td>@g.Fecha.ToShortDateString()</td>
+                                            <td>@g.Usuario</td>
+                                            <td>@g.Rubro</td>
+                                            <td>@g.Detalle</td>
+                                            <td>@g.Monto.ToString("C", CultureInfo.CreateSpecificCulture("es-AR"))</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info text-center">
+                            No hay gastos en pesos registrados este mes.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de gastos en dólares -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Gastos en Dólares (Mes Actual)</h5>
+                    @if (Model.GastosDolares.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Usuario</th>
+                                        <th>Rubro</th>
+                                        <th>Detalle</th>
+                                        <th>Monto</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var g in Model.GastosDolares)
+                                    {
+                                        <tr>
+                                            <td>@g.Fecha.ToShortDateString()</td>
+                                            <td>@g.Usuario</td>
+                                            <td>@g.Rubro</td>
+                                            <td>@g.Detalle</td>
+                                            <td>US$ @g.Monto.ToString("N2")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info text-center">
+                            No hay gastos en dólares registrados este mes.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Sección de Comparativa 6 meses -->
+    <div class="row mb-4">
+        <!-- Comparativa 6 meses pesos -->
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Comparativa AR$ - Últimos 6 meses</h5>
+                    @if (Model.Comparativa6Meses.Any(m => m.TotalPesos != 0))
+                    {
+                        <div style="height: 300px;">
+                            <canvas id="graficoComparativaPesos"></canvas>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info text-center mt-3">
+                            No hay datos para la comparativa.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Comparativa 6 meses dolares -->
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Comparativa USD - Últimos 6 meses</h5>
+                    @if (Model.Comparativa6Meses.Any(m => m.TotalDolares != 0))
+                    {
+                        <div style="height: 300px;">
+                            <canvas id="graficoComparativaDolares"></canvas>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info text-center mt-3">
+                            No hay datos para la comparativa.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Configuración común para gráficos
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString('es-AR');
+                            }
+                        }
+                    }
+                }
+            };
+
+            // Gráfico de Rubros Pesos
+            @if (Model.CategoriasDelMes.Any(c => c.TotalPesos != 0))
+            {
+                    var categoriasPesos = Model.CategoriasDelMes
+                                    .Where(c => c.TotalPesos != 0)
+                                    .Select(c => new { c.Nombre, c.TotalPesos })
+                                    .OrderByDescending(c => c.TotalPesos)
+                                    .ToList();
+
+                    var totalPesos = categoriasPesos.Sum(c => c.TotalPesos);
+
+                    <text>
+                    const totalPesosJS = @totalPesos.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+                    new Chart(document.getElementById('graficoRubrosPesos').getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: @Html.Raw(Json.Serialize(categoriasPesos.Select(c => c.Nombre))),
+                            datasets: [{
+                                label: 'Gastos en AR$',
+                                data: @Html.Raw(Json.Serialize(categoriasPesos.Select(c => c.TotalPesos))),
+                                backgroundColor: '#28a745'
+                            }]
+                        },
+                        options: {
+                            ...chartOptions,
+                            indexAxis: 'y',
+                                        scales: {
+                y: {
+            ticks: {
+                padding: 10,
+                callback: function(tickValue, index, ticks) {
+                    // tickValue aquí es solo un número (índice)
+                    const label = this.getLabelForValue(tickValue); // obtiene el nombre real
+                    const maxLength = 15; // límite de caracteres
+                    return label.length > maxLength ? label.substr(0, maxLength) + '…' : label;
+                }
+            }
+                }
+            },
+                            plugins: {
+                                ...chartOptions.plugins,
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const value = context.parsed.x;
+                                            const porcentaje = (value / totalPesosJS * 100);
+                                            return [
+                                                'Monto: $' + value.toLocaleString('es-AR'),
+                                                'Porcentaje: ' + porcentaje.toFixed(1) + '%'
+                                            ];
+                                        }
+                                    }
+                                }
+                            }
+
+                        }
+                    });
+                    </text>
+            }
+
+            // Gráfico de Rubros Dólares
+            @if (Model.CategoriasDelMes.Any(c => c.TotalDolares != 0))
+            {
+                    var categoriasDolares = Model.CategoriasDelMes
+                                    .Where(c => c.TotalDolares != 0)
+                                    .Select(c => new { c.Nombre, c.TotalDolares })
+                                    .OrderByDescending(c => c.TotalDolares)
+                                    .ToList();
+
+                    var totalDolares = categoriasDolares.Sum(c => c.TotalDolares);
+
+                    <text>
+                    const totalDolaresJS = @totalDolares.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+                    new Chart(document.getElementById('graficoRubrosDolares').getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: @Html.Raw(Json.Serialize(categoriasDolares.Select(c => c.Nombre))),
+                            datasets: [{
+                                label: 'Gastos en USD',
+                                data: @Html.Raw(Json.Serialize(categoriasDolares.Select(c => c.TotalDolares))),
+                                backgroundColor: '#17a2b8'
+                            }]
+                        },
+                        options: {
+                            ...chartOptions,
+                            indexAxis: 'y',
+                                        scales: {
+                y: {
+            ticks: {
+                padding: 10,
+                callback: function(tickValue, index, ticks) {
+                    // tickValue aquí es solo un número (índice)
+                    const label = this.getLabelForValue(tickValue); // obtiene el nombre real
+                    const maxLength = 15; // límite de caracteres
+                    return label.length > maxLength ? label.substr(0, maxLength) + '…' : label;
+                }
+            }
+                }
+            },
+                            plugins: {
+                                ...chartOptions.plugins,
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const value = context.parsed.x;
+                                            const porcentaje = (value / totalDolaresJS * 100);
+                                            return [
+                                                'Monto: US$' + value.toLocaleString('en-US', {minimumFractionDigits: 2}),
+                                                'Porcentaje: ' + porcentaje.toFixed(1) + '%'
+                                            ];
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    </text>
+            }
+
+            // Comparativa 6 meses Pesos
+            @if (Model.Comparativa6Meses.Any(m => m.TotalPesos != 0))
+            {
+                    <text>
+                    new Chart(document.getElementById('graficoComparativaPesos').getContext('2d'), {
+                        type: 'line',
+                        data: {
+                            labels: @Html.Raw(Json.Serialize(Model.Comparativa6Meses.Select(m => m.Mes))),
+                            datasets: [{
+                                label: 'Gastos en AR$',
+                                data: @Html.Raw(Json.Serialize(Model.Comparativa6Meses.Select(m => m.TotalPesos))),
+                                borderColor: '#28a745',
+                                backgroundColor: 'rgba(40, 167, 69, 0.2)',
+                                fill: true
+                            }]
+                        },
+                        options: chartOptions
+                    });
+                    </text>
+            }
+
+            // Comparativa 6 meses Dólares
+            @if (Model.Comparativa6Meses.Any(m => m.TotalDolares != 0))
+            {
+                    <text>
+                    new Chart(document.getElementById('graficoComparativaDolares').getContext('2d'), {
+                        type: 'line',
+                        data: {
+                            labels: @Html.Raw(Json.Serialize(Model.Comparativa6Meses.Select(m => m.Mes))),
+                            datasets: [{
+                                label: 'Gastos en USD',
+                                data: @Html.Raw(Json.Serialize(Model.Comparativa6Meses.Select(m => m.TotalDolares))),
+                                borderColor: '#17a2b8',
+                                backgroundColor: 'rgba(23, 162, 184, 0.2)',
+                                fill: true
+                            }]
+                        },
+                        options: chartOptions
+                    });
+                    </text>
+            }
+        });
+    </script>
+}

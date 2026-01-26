@@ -1,0 +1,87 @@
+﻿@model IEnumerable<GestorDeGastos.Models.Rubro>
+
+@{
+    ViewData["Title"] = "Rubros";
+}
+
+<div class="container mt-4">
+    <h1>Gestión de Rubros</h1>
+
+    <hr />
+
+    <a asp-action="CrearRubro" class="btn btn-success mb-4">Crear nuevo Rubro</a>
+
+    <div class="table-responsive">
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>
+                        Rubro
+                    </th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.NombreRubro)
+                        </td>
+                        <td>
+                            <a asp-action="EditarRubro" asp-route-id="@item.Id" class="btn btn-warning btn-sm">Editar</a> |
+                            <button type="button" class="btn btn-danger btn-sm"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#confirmarEliminarModal"
+                                    data-id="@item.Id"
+                                    data-nombre="@item.NombreRubro">
+                                Eliminar
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal de confirmación -->
+<div class="modal fade" id="confirmarEliminarModal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalLabel">Confirmar eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                ¿Está seguro que desea eliminar el rubro: <strong id="rubroAEliminar"></strong>?
+            </div>
+            <div class="modal-footer">
+                <form id="formEliminar" method="post" asp-action="EliminarRubro" asp-controller="Rubros">
+                    <input type="hidden" name="id" id="rubroIdEliminar" />
+                    <button type="submit" class="btn btn-danger">Sí</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var confirmarEliminarModal = document.getElementById('confirmarEliminarModal');
+        confirmarEliminarModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            var userId = button.getAttribute('data-id');
+            var userName = button.getAttribute('data-nombre');
+
+            // Poner el nombre en el modal
+            document.getElementById('rubroAEliminar').textContent = userName;
+
+            // Guardar el id en el input hidden
+            document.getElementById('rubroIdEliminar').value = userId;
+        });
+    </script>
+}
+

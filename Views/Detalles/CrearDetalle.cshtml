@@ -1,0 +1,17 @@
+﻿@model Detalle
+
+<h2>Crear Detalle</h2>
+
+<form asp-action="CrearDetalle" method="post">
+    <div class="form-group">
+        <label asp-for="NombreDetalle"></label>
+        <input asp-for="NombreDetalle" class="form-control" />
+        <span asp-validation-for="NombreDetalle" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <input asp-for="RubroId" type="hidden" value="@ViewBag.RubroId" class="form-control" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Guardar</button>
+</form>

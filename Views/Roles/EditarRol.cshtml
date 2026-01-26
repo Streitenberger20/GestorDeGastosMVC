@@ -1,0 +1,62 @@
+﻿@model GestorDeGastos.ViewModels.EditarRolViewModel
+
+@{
+    ViewData["Title"] = "Editar Rol";
+}
+
+<h1>Editar Rol</h1>
+
+<hr />
+
+<div class="row d-flex justify-content-center align-items-center">
+    <div class="col-md-8">
+
+        <form asp-action="EditarRol" method="post">
+            <input type="hidden" asp-for="RolId" />
+
+            <div class="form-group mb-5 mt-3">
+                <h3>Nombre del Rol:</h3>
+                <input asp-for="NombreRol" class="form-control" readonly/>
+                <span asp-validation-for="NombreRol" class="alert-warning"></span>
+            </div>
+
+            <div class="form-group mb-5">
+                <h3>Asignar Rubros al Rol:</h3>
+                <span asp-validation-for="RubrosSeleccionados" class="alert-warning"> </span>
+                <div class="row mt-3">
+                    @foreach (var rubro in Model.RubrosDisponibles)
+                    {
+                        var isChecked = Model.RubrosSeleccionados.Contains(int.Parse(rubro.Value));
+                        <div class="d-flex col-md-4 mb-2">
+                            <input type="checkbox"
+                                   class="btn-check"
+                                   name="RubrosSeleccionados"
+                                   value="@rubro.Value"
+                                   id="rubro_@rubro.Value" autocomplete="off"
+                                   @(isChecked ? "checked" : "") />
+                            <label class="btn d-flex align-items-center justify-content-center btn-outline-primary w-100" for="rubro_@rubro.Value">
+                                @rubro.Text
+                            </label>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="form-group d-flex justify-content-center align-items-center">
+                <input type="submit" value="Guardar" class="btn btn-primary mb-3" />
+            </div>
+
+        </form>
+
+        <div class="form-group d-flex justify-content-center align-items-center">
+            <a asp-action="ListadoRoles" class="btn btn-secondary">Cancelar</a>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

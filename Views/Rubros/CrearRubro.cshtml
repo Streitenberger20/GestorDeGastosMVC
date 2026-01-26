@@ -1,0 +1,129 @@
+﻿@model GestorDeGastos.ViewModels.CrearRubroViewModel
+
+@{
+    ViewData["Title"] = "Crear Rubro";
+}
+
+<h1>Crear Rubro</h1>
+
+<hr />
+
+<div class="row d-flex justify-content-center align-items-center">
+    <div class="col-md-8">
+        <form asp-action="CrearRubro" method="post">
+
+            <!-- Nombre Rubro -->
+            <div class="form-group mb-5 mt-3">
+                <h3>Nombre de Rubro:</h3>
+                <input asp-for="NombreRubro" class="form-control text-uppercase" />
+                <span asp-validation-for="NombreRubro" class="alert-warning"></span>
+            </div>
+
+            <hr />
+
+            <!-- Tabla de Detalles -->
+            <div class="form-group mb-5">
+                <h3>Detalles:</h3>
+
+                <table id="tablaDetalles" class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Descripción</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                    </tbody>
+                </table>
+                <span asp-validation-for="DetallesDescripcion" class="alert-warning"></span>
+            </div>
+
+            <!-- Input para agregar nuevos detalles -->
+            <div class="form-group mb-5">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <input type="text" id="nuevoDetalleDescripcion" placeholder="Nueva descripción" class="form-control" />
+                    </div>
+                    <div class="col-md-4">
+                        <button type="button" id="btnAgregarDetalle" class="btn btn-info">Agregar Detalle</button>
+                    </div>
+                </div>
+            </div>
+
+            <hr />
+
+            <!-- Roles -->
+            <div class="form-group mb-5">
+                <h3>Roles que pueden ver este Rubro:</h3>
+                <div>
+                    @foreach (var rol in ViewBag.Roles)
+                    {
+                        <label style="display:block; margin-bottom: 5px;">
+                            <input type="checkbox" name="RolesSeleccionados" value="@rol.Id" />
+                            @rol.NombreRol
+                        </label>
+                    }
+                </div>
+                <span asp-validation-for="RolesSeleccionados" class="alert-warning"></span>
+            </div>
+
+            <!-- Botones -->
+            <div class="form-group d-flex justify-content-center align-items-center">
+                <input type="submit" value="Crear" class="btn btn-primary mb-3" />
+            </div>
+        </form>
+
+        <div class="form-group d-flex justify-content-center align-items-center">
+            <a asp-action="ListadoRubros" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    // Actualizar índices de los detalles
+    function actualizarIndices() {
+        const filas = document.querySelectorAll('#tablaDetalles tbody tr');
+        filas.forEach((fila, index) => {
+            const input = fila.querySelector('input[name^="DetallesDescripcion"]');
+            if (input) {
+                input.name = `DetallesDescripcion[${index}]`;
+            }
+        });
+    }
+
+    // Agregar nuevo detalle
+    document.getElementById('btnAgregarDetalle').addEventListener('click', () => {
+        const descInput = document.getElementById('nuevoDetalleDescripcion');
+        const desc = descInput.value.toUpperCase().trim();
+
+        if (!desc) {
+            alert('Ingrese una descripción válida');
+            return;
+        }
+
+        const tbody = document.querySelector('#tablaDetalles tbody');
+        const rowCount = tbody.querySelectorAll('tr').length;
+
+        const nuevaFila = document.createElement('tr');
+        nuevaFila.innerHTML = `
+            <td>
+                <input type="text" name="DetallesDescripcion[${rowCount}]" value="${desc}" class="form-control" readonly />
+            </td>
+            <td style="text-align:center;">
+                <button type="button" class="btn btn-danger btnEliminarDetalle">Eliminar</button>
+            </td>
+        `;
+
+        tbody.appendChild(nuevaFila);
+
+        // Botón eliminar
+        nuevaFila.querySelector('.btnEliminarDetalle').addEventListener('click', function () {
+            this.closest('tr').remove();
+            actualizarIndices();
+        });
+
+        descInput.value = '';
+    });
+</script>

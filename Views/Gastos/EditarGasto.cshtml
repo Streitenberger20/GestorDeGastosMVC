@@ -1,0 +1,249 @@
+﻿@model GestorDeGastos.ViewModels.GastoViewModel
+
+<h1>Editar gasto</h1>
+
+<hr />
+
+<div class="row d-flex justify-content-center align-items-center">
+    <div class="col-md-6">
+        <form id="editarGasto" asp-controller="Gastos" asp-route-id="@ViewBag.GastoId" asp-action="EditarGasto" method="post">
+            <div class="row form-group mb-3">
+                <div class="col-3">
+                    <label>Fecha</label>
+                    <input asp-for="FechaGasto" type="date" class="form-control"
+                           max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                    <span asp-validation-for="FechaGasto" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class=" col-3 form-group">
+                    <label>Moneda</label>
+                    <select asp-for="Moneda" class="form-control">
+                        <option value="AR$">AR$</option>
+                        <option value="USD">USD</option>
+                    </select>
+                    <span asp-validation-for="Moneda" class="text-danger"></span>
+                </div>
+
+                <div class="col-9 form-group">
+                    <label>Importe</label>
+                    <input id="ImporteFormateado" type="text" class="form-control"
+                           value="@Model.Importe?.ToString("N2")" autocomplete="off" required />
+                    <input type="hidden" id="Importe" name="Importe" value="@Model.Importe" />
+                    <span asp-validation-for="Importe" class="text-danger"></span>
+                </div>
+
+            </div>
+
+            <div class="form-group mb-3">
+                <label>Rubro</label>
+                <input type="text" id="RubroInput" class="form-control"
+                       value="@ViewBag.RubroNombre" autocomplete="off" placeholder="Escribe un rubro..." />
+                <input type="hidden" asp-for="RubroId" id="RubroId" />
+                <span asp-validation-for="RubroId" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label>Detalle</label>
+                <input id="DetalleInput" type="text" class="form-control"
+                       value="@ViewBag.DetalleNombre" autocomplete="off" placeholder="Selecciona un detalle..." />
+                <input type="hidden" asp-for="DetalleId" id="DetalleId" />
+                <span asp-validation-for="DetalleId" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-5">
+                <label>Comentario</label>
+                <textarea asp-for="Comentario" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="Comentario" class="text-danger"></span>
+            </div>
+
+            <div class="form-group d-flex justify-content-center align-items-center mb-3">
+                <button type="button" class="btn btn-primary" onclick="mostrarConfirmacion()">Guardar</button>
+            </div>
+        </form>
+        <div class="form-group d-flex justify-content-center align-items-center">
+            <a asp-action="ListadoGastos" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </div>
+
+
+
+    <!-- Modal de Confirmación la edicion gasto -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" role="dialog" aria-labelledby="confirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirmar gasto</h5>
+                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Cerrar">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    ¿Está seguro que desea editar este gasto con los datos ingresados?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="enviarFormulario()">Aceptar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+@section Scripts {
+        <script src="https://cdn.jsdelivr.net/npm/autonumeric@4.6.0/dist/autoNumeric.min.js"></script>
+        <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+
+
+
+        <script>
+            $(function() {
+
+                // Autocomplete Rubros
+                var rubros = [
+                    @foreach (var rubro in ViewBag.Rubros as SelectList)
+                    {
+                                    @: { label: "@rubro.Text", value: "@rubro.Value" },
+                    }
+                ];
+
+                $("#RubroInput").autocomplete({
+                    source: function(request, response) {
+                        var term = $.ui.autocomplete.escapeRegex(request.term);
+                        var matcher = new RegExp(term, "i");
+                        response($.grep(rubros, function(item){
+                            return matcher.test(item.label);
+                        }));
+                    },
+                    minLength: 0,
+                    select: function(event, ui) {
+                        event.preventDefault();
+                        $("#RubroInput").val(ui.item.label);
+                        $("#RubroId").val(ui.item.value);
+
+                        // Cargar detalles del rubro seleccionado
+                        cargarDetalles(ui.item.value);
+                    },
+                    focus: function(event, ui) {
+                        event.preventDefault();
+                        $("#RubroInput").val(ui.item.label);
+                    }
+                }).autocomplete("instance")._renderItem = function(ul, item) {
+                    var term = this.term;
+                    var label = item.label.replace(new RegExp('(' + $.ui.autocomplete.escapeRegex(term) + ')', 'gi'), '<strong>$1</strong>');
+                    return $("<li>").append("<div>" + label + "</div>").appendTo(ul);
+                };
+
+                $("#RubroInput").on('focus', function () {
+                    $(this).autocomplete("search", "");
+                });
+
+                // Validar Rubro escrito
+                $("#RubroInput").on('input change', function() {
+                    const val = $(this).val().toLowerCase();
+                    const match = rubros.find(r => r.label.toLowerCase() === val);
+                    if(match) {
+                        $("#RubroId").val(match.value);
+                    } else {
+                        $("#RubroId").val('');
+                        $("#DetalleInput").val('');
+                        $("#DetalleId").val('');
+                    }
+                });
+
+
+                // Inicializar Autocomplete Detalles
+                function inicializarAutocompleteDetalles(detalles) {
+                    if ($("#DetalleInput").hasClass("ui-autocomplete-input")) {
+                        $("#DetalleInput").autocomplete("destroy");
+                    }
+
+                    $("#DetalleInput").autocomplete({
+                        source: function(request, response) {
+                            const term = $.ui.autocomplete.escapeRegex(request.term);
+                            const matcher = new RegExp(term, "i");
+                            response($.grep(detalles, function(item){
+                                return matcher.test(item.label);
+                            }));
+                        },
+                        minLength: 0,
+                        select: function(event, ui) {
+                            event.preventDefault();
+                            $("#DetalleInput").val(ui.item.label);
+                            $("#DetalleId").val(ui.item.value);
+                        },
+                        focus: function(event, ui) {
+                            event.preventDefault();
+                            $("#DetalleInput").val(ui.item.label);
+                        }
+                    }).autocomplete("instance")._renderItem = function(ul, item) {
+                        const term = this.term;
+                        const label = item.label.replace(new RegExp('(' + $.ui.autocomplete.escapeRegex(term) + ')', 'gi'), '<strong>$1</strong>');
+                        return $("<li>").append("<div>" + label + "</div>").appendTo(ul);
+                    };
+
+                    $("#DetalleInput").off('focus').on('focus', function () {
+                        $(this).autocomplete("search", "");
+                    });
+
+                    // Validar Detalle escrito
+                    $("#DetalleInput").off('input change').on('input change', function() {
+                        const val = $(this).val().toLowerCase();
+                        const match = detalles.find(d => d.label.toLowerCase() === val);
+                        if(match) {
+                            $("#DetalleId").val(match.value);
+                        } else {
+                            $("#DetalleId").val('');
+                        }
+                    });
+
+                    $("#DetalleInput").val('');
+                    $("#DetalleId").val('');
+                }
+
+
+                // Cargar detalles desde backend
+                function cargarDetalles(rubroId) {
+                    fetch('/Gastos/ObtenerDetalles?rubroId=' + rubroId)
+                        .then(response => response.json())
+                        .then(data => {
+                            var detalles = data.map(d => ({ label: d.nombreDetalle, value: d.id }));
+                            inicializarAutocompleteDetalles(detalles);
+                        });
+                }
+
+            });
+        </script>
+
+        <script>
+
+            // Formateo del importe
+              const an = new AutoNumeric('#ImporteFormateado', {
+                digitGroupSeparator: '.',
+                decimalCharacter: ',',
+                decimalCharacterAlternative: '.',
+                decimalPlaces: 2,
+                unformatOnSubmit: true,
+                modifyValueOnWheel: false
+            });
+
+            document.getElementById('ImporteFormateado').addEventListener('input', function () {
+                const raw = an.getNumericString().replace('.', ',');
+                console.log('Valor sin formato:', raw);
+                document.getElementById('Importe').value = raw;
+            });
+
+            function mostrarConfirmacion() {
+                const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+                modal.show();
+            }
+
+            function enviarFormulario() {
+                document.getElementById('editarGasto').submit();
+            }
+
+        </script>
+}

@@ -1,0 +1,250 @@
+﻿@{
+    ViewData["Title"] = "Comparativa de Meses";
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="container mt-4">
+    <h2 class="mb-4">Comparativa de Gastos por Rubros</h2>
+
+    <table class="table table-bordered" id="tablaMeses">
+        <thead>
+            <tr>
+                <th>Mes</th>
+                <th>Año</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    <select class="form-select mes">
+                        @for (int m = 1; m <= 12; m++)
+                        {
+                            <option value="@m">@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(m)</option>
+                        }
+                    </select>
+                </td>
+                <td>
+                    <select class="form-select anio">
+                        @for (int a = DateTime.Now.Year; a >= 2000; a--)
+                        {
+                            <option value="@a">@a</option>
+                        }
+                    </select>
+                </td>
+                <td>
+                    <button type="button" class="btn btn-danger btn-sm eliminarFila">Eliminar</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <button id="agregarMes" class="btn btn-secondary">Agregar Mes</button>
+    <button id="generarComparativa" class="btn btn-primary">Generar Comparativa</button>
+
+    <hr />
+
+    <div id="resultados"></div>
+</div>
+
+<script>
+    document.getElementById("agregarMes").addEventListener("click", function () {
+        const filaOriginal = document.querySelector("#tablaMeses tbody tr");
+        const fila = filaOriginal.cloneNode(true);
+
+        fila.querySelector(".mes").selectedIndex = 0;
+        fila.querySelector(".anio").selectedIndex = 0;
+
+        document.querySelector("#tablaMeses tbody").appendChild(fila);
+    });
+
+    document.addEventListener("click", function (e) {
+        if (e.target.classList.contains("eliminarFila")) {
+            e.target.closest("tr").remove();
+        }
+    });
+
+    document.getElementById("generarComparativa").addEventListener("click", function (e) {
+        e.preventDefault();
+
+        const filtros = [];
+        let datosValidos = true;
+
+        document.querySelectorAll("#tablaMeses tbody tr").forEach(tr => {
+            const mes = parseInt(tr.querySelector(".mes").value);
+            const anio = parseInt(tr.querySelector(".anio").value);
+
+            if (isNaN(mes) || isNaN(anio)) {
+                datosValidos = false;
+            } else {
+                filtros.push({ Mes: mes, Anio: anio });
+            }
+        });
+
+        if (!datosValidos || filtros.length === 0) {
+            alert("Por favor seleccione mes y año en todas las filas antes de generar la comparativa.");
+            return;
+        }
+
+        fetch("@Url.Action("ObtenerDatos", "Comparativa")", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(filtros)
+        })
+        .then(res => res.json())
+        .then(data => mostrarResultados(data))
+        .catch(err => {
+            console.error("Error al obtener datos:", err);
+            document.getElementById("resultados").innerHTML =
+                "<p class='text-danger'>Ocurrió un error al generar la comparativa.</p>";
+        });
+    });
+
+    function mostrarResultados(datos) {
+        const contenedor = document.getElementById("resultados");
+        contenedor.innerHTML = "";
+
+        // Agrupar datos por mes/año
+        const grupos = {};
+        datos.forEach(d => {
+            const clave = `${d.mes}/${d.anio}`;
+            if (!grupos[clave]) grupos[clave] = [];
+            grupos[clave].push(d);
+        });
+
+        // Procesar cada mes
+        Object.keys(grupos).forEach(grupo => {
+            const [mesNum, anio] = grupo.split("/").map(Number);
+            const datosMes = grupos[grupo];
+
+            // Convertir número de mes a nombre (ej: 1 -> "Enero")
+            const nombreMes = new Date(anio, mesNum - 1, 1).toLocaleString('es-ES', { month: 'long' });
+            const tituloMes = `${nombreMes.charAt(0).toUpperCase() + nombreMes.slice(1)} ${anio}`;
+
+            // Separar datos por moneda
+            const datosPesos = datosMes.filter(d =>
+                String(d.moneda).trim().toLowerCase().includes("ar$") ||
+                String(d.moneda).trim().toLowerCase().includes("peso")
+            );
+
+            const datosDolares = datosMes.filter(d =>
+                String(d.moneda).trim().toLowerCase().includes("usd") ||
+                String(d.moneda).trim().toLowerCase().includes("dólar")
+            );
+
+            // Mostrar sección organizada
+            mostrarReporteMes(tituloMes, datosPesos, datosDolares);
+        });
+    }
+
+    // --- Funciones nuevas (agrégalas al mismo script) ---
+    function mostrarReporteMes(mes, datosPesos, datosDolares) {
+        const contenedor = document.getElementById("resultados");
+
+        // Sección del mes
+        const seccionMes = document.createElement("div");
+        seccionMes.className = "mb-5 border-bottom pb-4";
+        contenedor.appendChild(seccionMes);
+
+        // Título del mes
+        const tituloMes = document.createElement("h3");
+        tituloMes.className = "mb-4 text-center";
+        tituloMes.textContent = mes;
+        seccionMes.appendChild(tituloMes);
+
+        // Fila para contenido
+        const fila = document.createElement("div");
+        fila.className = "row g-4";
+        seccionMes.appendChild(fila);
+
+        // Columna Pesos
+        const colPesos = document.createElement("div");
+        colPesos.className = "col-md-6";
+        fila.appendChild(colPesos);
+
+        // Columna Dólares
+        const colDolares = document.createElement("div");
+        colDolares.className = "col-md-6";
+        fila.appendChild(colDolares);
+
+        // Mostrar contenido para Pesos
+        if (datosPesos && datosPesos.length > 0) {
+            crearGraficoYTabla(colPesos, datosPesos);
+        } else {
+            colPesos.innerHTML = `<div class="alert alert-info text-center">No hubo gastos en pesos este mes.</div>`;
+        }
+
+        // Mostrar contenido para Dólares
+        if (datosDolares && datosDolares.length > 0) {
+            crearGraficoYTabla(colDolares, datosDolares);
+        } else {
+            colDolares.innerHTML = `<div class="alert alert-info text-center">No hubo gastos en dólares este mes.</div>`;
+        }
+    }
+
+    function crearGraficoYTabla(contenedor, datosMoneda) {
+        // Card contenedora
+        const card = document.createElement("div");
+        card.className = "card h-100";
+        contenedor.appendChild(card);
+
+        const cardBody = document.createElement("div");
+        cardBody.className = "card-body";
+        card.appendChild(cardBody);
+
+        // Título de moneda
+        const moneda = datosMoneda[0].moneda.includes("USD") ? "Dólares" : "Pesos";
+        const titulo = document.createElement("h4");
+        titulo.className = "card-title text-center mb-3";
+        titulo.textContent = `Gastos en ${moneda}`;
+        cardBody.appendChild(titulo);
+
+        // Gráfico
+        const canvasContainer = document.createElement("div");
+        canvasContainer.style.height = "250px";
+        cardBody.appendChild(canvasContainer);
+
+        const canvas = document.createElement("canvas");
+        canvasContainer.appendChild(canvas);
+
+        new Chart(canvas, {
+            type: 'pie',
+            data: {
+                labels: datosMoneda.map(d => d.rubro),
+                datasets: [{
+                    data: datosMoneda.map(d => d.monto),
+                    backgroundColor: ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0"]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+
+        // Tabla
+        const tabla = document.createElement("table");
+        tabla.className = "table table-striped mt-4";
+        tabla.innerHTML = `
+            <thead>
+                <tr>
+                    <th>Rubro</th>
+                    <th>Monto</th>
+                    <th>% del mes</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${datosMoneda.map(d => `
+                    <tr>
+                        <td>${d.rubro}</td>
+                        <td>${d.moneda} ${d.monto.toLocaleString('es-AR')}</td>
+                        <td>${d.porcentaje.toFixed(2)}%</td>
+                    </tr>
+                `).join("")}
+            </tbody>
+        `;
+        cardBody.appendChild(tabla);
+    }
+</script>

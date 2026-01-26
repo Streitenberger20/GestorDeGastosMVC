@@ -1,0 +1,115 @@
+﻿@model IEnumerable<GestorDeGastos.Models.Gasto>
+
+@{
+    ViewData["Title"] = "Gastos del mes";
+}
+<div class="container mt-4">
+
+    <h1>Gastos del mes</h1>
+
+    <hr />
+
+    <div class="row">
+        <div class="col-4">
+            <a asp-action="CrearGasto" class="btn btn-success mb-4">
+                Nuevo Gasto
+            </a>
+        </div>
+
+        <div class="col-4 d-flex justify-content-end">
+            Total: 
+            <strong>AR$ 
+            @String.Format("{0:N2}", Model.Where(g => g.Moneda == "AR$").Sum(g => g.Importe))
+            </strong>
+
+        </div>
+
+        <div class="col-4 d-flex justify-content-end">
+            Total: 
+            <strong>USD 
+            @String.Format("{0:N2}", Model.Where(g => g.Moneda == "USD").Sum(g => g.Importe))
+            </strong>
+
+        </div>
+
+    </div>
+
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th class="text-center">Fecha</th>
+                    <th class="text-center">Moneda</th>
+                    <th class="text-center">Importe</th>
+                    <th class="text-center">Rubro</th>
+                    <th class="text-center">Detalle</th>
+                    <th class="text-center">Comentario</th>
+                    <th class="text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="text-center">@item.FechaGasto.ToShortDateString()</td>
+                        <td class="text-center">@Html.DisplayFor(modelItem => item.Moneda)</td>
+                        <td class="text-center">@String.Format("{0:N2}", item.Importe)</td>
+                        <td class="text-center">@item.Rubro?.NombreRubro</td>
+                        <td class="text-center">@item.Detalle?.NombreDetalle</td>
+                        <td class="text-center">@Html.DisplayFor(modelItem => item.Comentario)</td>
+                        <td class="text-center">
+                            <a asp-action="EditarGasto" asp-route-id="@item.Id" class="btn btn-warning btn-sm">Editar</a> |
+                            <button type="button" class="btn btn-danger btn-sm"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#confirmarEliminarGastoModal"
+                                    data-id="@item.Id"
+                                    data-detalle="@item.Rubro.NombreRubro">
+                                Eliminar
+                            </button>
+
+
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal de confirmación eliminar gasto -->
+<div class="modal fade" id="confirmarEliminarGastoModal" tabindex="-1" aria-labelledby="modalGastoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalGastoLabel">Confirmar eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                ¿Está seguro que desea eliminar el gasto: <strong id="gastoAEliminar"></strong>?
+            </div>
+            <div class="modal-footer">
+                <form id="formEliminarGasto" method="post" asp-action="EliminarGasto" asp-controller="Gastos">
+                    <input type="hidden" name="id" id="gastoIdEliminar" />
+                    <button type="submit" class="btn btn-danger">Sí</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        //acciones modal eliminar gastos
+        var confirmarEliminarGastoModal = document.getElementById('confirmarEliminarGastoModal');
+        confirmarEliminarGastoModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            var gastoId = button.getAttribute('data-id');
+            var gastoDetalle = button.getAttribute('data-detalle');
+
+            document.getElementById('gastoAEliminar').textContent = gastoDetalle;
+            document.getElementById('gastoIdEliminar').value = gastoId;
+        });
+    </script>
+}
+

@@ -1,0 +1,123 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - GestorDeGastos</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/GestorDeGastos.styles.css" asp-append-version="true" />
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+
+                @{
+                    if(!User.Identity.IsAuthenticated)
+                    {
+                        <a class="navbar-brand" asp-area="" asp-controller="Login" asp-action="Login">GestorDeGastos</a>
+                    }
+                    else if (User.IsInRole("JEFE") && User.Identity.IsAuthenticated)
+                    {
+                        <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">GestorDeGastos</a>
+                    }
+                    else if (!User.IsInRole("JEFE") && User.Identity.IsAuthenticated)
+                        {
+                        <a class="navbar-brand" asp-area="" asp-controller="Gastos" asp-action="ListadoGastos">GestorDeGastos</a>
+                        }
+                }
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+
+
+                    @{
+                        if (!User.IsInRole("JEFE") && User.Identity.IsAuthenticated)
+                        {
+
+                            <ul class="navbar-nav flex-grow-1">
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-area="" asp-controller="Login" asp-action="Logout">Cerrar Sesion</a>
+                                </li>
+                            </ul>
+
+                        }
+                        else if (User.IsInRole("JEFE") && User.Identity.IsAuthenticated)
+                        {
+                            <ul class="navbar-nav flex-grow-1">
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-area="" asp-controller="Gastos" asp-action="ListadoGastos">Gastos</a>
+                                </li>
+
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle text-dark" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Reportes
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li class="dropdown-item">
+                                            <a class="dropdown-item text-dark" asp-area="" asp-controller="Reportes" asp-action="ListadoGastos">Reporte de Gastos</a>
+                                        </li>
+                                        <li class="dropdown-item">
+                                            <a class="dropdown-item text-dark" asp-area="" asp-controller="Comparativa" asp-action="index">Comparar por Rubros</a>
+                                        </li>
+                                    </ul>
+                                </li>
+
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle text-dark" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Gestionar
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li class="dropdown-item">
+                                            <a class="dropdown-item text-dark" asp-area="" asp-controller="Roles" asp-action="ListadoRoles">Roles</a>
+                                        </li>
+                                        <li class="dropdown-item">
+                                            <a class="dropdown-item text-dark" asp-area="" asp-controller="Usuarios" asp-action="ListadoUsuarios">Usuarios</a>
+                                        </li>
+                                        <li class="dropdown-item">
+                                            <a class="dropdown-item text-dark" asp-area="" asp-controller="Rubros" asp-action="ListadoRubros">Rubros</a>
+                                        </li>
+
+
+
+                                    </ul>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-area="" asp-controller="Login" asp-action="Logout">Cerrar Session</a>
+                                </li>
+                            </ul>
+                        }
+
+                    }
+                    
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+   <!-- <footer class="border-top footer text-muted">
+        <div >
+            &copy; 2025 - GestorDeGastos - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        </div>
+    </footer> -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
