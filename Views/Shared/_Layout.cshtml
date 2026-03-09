@@ -41,10 +41,20 @@
                         {
 
                             <ul class="navbar-nav flex-grow-1">
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Gastos" asp-action="ListadoGastos">Gastos</a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Reportes" asp-action="ListadoGastos">Reportes</a>
+                            </li>
+
+                            
                                 <li class="nav-item">
                                     <a class="nav-link text-dark" asp-area="" asp-controller="Login" asp-action="Logout">Cerrar Sesion</a>
                                 </li>
                             </ul>
+
 
                         }
                         else if (User.IsInRole("JEFE") && User.Identity.IsAuthenticated)

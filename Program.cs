@@ -6,10 +6,11 @@ using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Configuration.AddJsonFile("appsettings-dev.json", optional: false, reloadOnChange: true);
+
 //registrar DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
 
 //Configurar Session
 builder.Services.AddDistributedMemoryCache();
@@ -42,9 +43,8 @@ CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-
 var app = builder.Build();
-app.UseSession();
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
@@ -60,13 +60,12 @@ app.UseRequestLocalization(new RequestLocalizationOptions
     SupportedUICultures = new[] { cultureInfo }
 });
 
+
+app.UseSession();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseAuthorization();
-
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Login}/{action=Login}");

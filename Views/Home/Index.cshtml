@@ -224,10 +224,13 @@
                 },
                 scales: {
                     x: {
+                        type: 'category'
+                    },
+                    y: {
                         beginAtZero: true,
                         ticks: {
                             callback: function(value) {
-                                return '$' + value.toLocaleString('es-AR');
+                                return '$' + Number(value).toLocaleString('es-AR');
                             }
                         }
                     }

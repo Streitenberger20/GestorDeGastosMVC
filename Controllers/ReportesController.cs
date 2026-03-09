@@ -5,10 +5,11 @@ using GestorDeGastos.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace GestorDeGastos.Controllers
 {
-    [Authorize(Roles = "JEFE")]
+    [Authorize]
     public class ReportesController : Controller
     {
         private readonly AppDbContext _context;
@@ -21,6 +22,7 @@ namespace GestorDeGastos.Controllers
         [HttpGet]
         public async Task<IActionResult> ListadoGastos(DateTime? fechaDesde, DateTime? fechaHasta, int? usuarioId, int? rubroId, string moneda)
         {
+            List<Usuario> usuarios;
 
 
             var query = _context.Gastos
@@ -53,16 +55,29 @@ namespace GestorDeGastos.Controllers
                 })
                 .ToListAsync();
 
+            
+
+            if (User.IsInRole("JEFE")) {
+                usuarios = await _context.Usuarios
+                 .Where(u => u.esActivo)
+                 .OrderBy(u => u.NombreUsuario)
+                 .ToListAsync();
+            }
+            else
+            {
+                usuarios = await _context.Usuarios
+                 .Where(u => u.esActivo && u.Id == int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)))
+                 .OrderBy(u => u.NombreUsuario)
+                 .ToListAsync();
+            }
+
             var vm = new GastoFiltroViewModel
             {
                 FechaDesde = fechaDesde,
                 FechaHasta = fechaHasta,
                 UsuarioId = usuarioId,
                 RubroId = rubroId,
-                Usuarios = await _context.Usuarios
-                .Where(u => u.esActivo)
-                .OrderBy(u => u.NombreUsuario)
-                .ToListAsync(),
+                Usuarios = usuarios,
                 Rubros = await _context.Rubros
                 .Where(r => r.esActivo)
                 .OrderBy(r => r.NombreRubro)
@@ -75,7 +90,6 @@ namespace GestorDeGastos.Controllers
             return View(vm);
         }
 
-        [HttpGet]
         [HttpGet]
         public async Task<IActionResult> ExportarExcel(DateTime? fechaDesde, DateTime? fechaHasta, int? usuarioId, int? rubroId, string moneda)
         {

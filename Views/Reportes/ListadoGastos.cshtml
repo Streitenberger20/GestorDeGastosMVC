@@ -29,7 +29,10 @@
         <div class="col-md-3">
             <label>Usuario</label>
             <select class="form-select" name="usuarioId">
-                <option value="">-- Todos --</option>
+                @if(User.IsInRole("JEFE"))
+                {
+                    <option value="">-- Todos --</option>
+                })
                 @foreach (var u in Model.Usuarios)
                 {
                     <option value="@u.Id" selected="@(u.Id == Model.UsuarioId ? "selected" : null)">@u.NombreUsuario</option>
@@ -39,7 +42,7 @@
 
         <div class="col-md-3">
             <label>Rubro</label>
-            <select class="form-select" name="rubroId">
+            <select class="form-select" name="rubroId"> 
                 <option value="">-- Todos --</option>
                 @foreach (var r in Model.Rubros)
                 {
